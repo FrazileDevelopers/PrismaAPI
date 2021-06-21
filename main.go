@@ -31,7 +31,7 @@ func GenerateJWT() (string, error) {
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("request from ", r.Header.Get("X-FORWARDED-FOR") ," on route /")
+	fmt.Println("request from ", r.Header.Get("X-FORWARDED-FOR"), " on route /")
 	validToken, err := GenerateJWT()
 	if err != nil {
 		fmt.Fprintf(w, err.Error())
@@ -62,7 +62,7 @@ func handleRequests() {
 }
 
 func main() {
-	fmt.Println("My Client")
+	fmt.Println("Prisma Server")
 
 	handleRequests()
 }
