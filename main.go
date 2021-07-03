@@ -7,6 +7,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/gorilla/mux"
 )
 
 var mySigningKey = []byte("super")
@@ -32,10 +33,7 @@ func GenerateJWT() (string, error) {
 
 func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("request from ", r.Header.Get("X-FORWARDED-FOR"), " on route /")
-	validToken, err := GenerateJWT()
-	if err != nil {
-		fmt.Fprintf(w, err.Error())
-	}
+	validToken := "Frazile Server Online"
 
 	// client := &http.Client{}
 	// req, _ := http.NewRequest("GET", "http://127.0.0.1:8081", nil)
@@ -55,10 +53,17 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, validToken)
 }
 
-func handleRequests() {
-	http.HandleFunc("/", homePage)
+func login(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "Login POST Endpoint worked")
+}
 
-	log.Fatal(http.ListenAndServe(":9001", nil))
+func handleRequests() {
+
+	myRouter := mux.NewRouter().StrictSlash(true)
+	myRouter.HandleFunc("/", homePage)
+	myRouter.HandleFunc("/api/login", login).Methods("POST")
+
+	log.Fatal(http.ListenAndServe(":9001", myRouter))
 }
 
 func main() {
