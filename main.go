@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -54,7 +55,17 @@ func homePage(w http.ResponseWriter, r *http.Request) {
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Login POST Endpoint worked")
+	// fmt.Fprintf(w, "Login POST Endpoint worked")
+
+	validToken, err := GenerateJWT()
+	if err != nil {
+		fmt.Fprintf(w, err.Error())
+	}
+	loggedin := validToken
+	fmt.Println("Endpoint Hit: Login Endpoint")
+	w.Header().Set("Content-Type", "application/json") // Setting the Content Type Header
+	w.WriteHeader(http.StatusOK)                       // Setting the Status Code
+	json.NewEncoder(w).Encode(loggedin)
 }
 
 func handleRequests() {
