@@ -105,7 +105,7 @@ func login(w http.ResponseWriter, r *http.Request) {
 func handleRequests() {
 
 	myRouter := mux.NewRouter().StrictSlash(true)
-	myRouter.HandleFunc("/", home)
+	myRouter.HandleFunc("/api/home", home)
 	myRouter.HandleFunc("/api/login", login).Methods("POST")
 	myRouter.HandleFunc("/api/refresh", refresh).Methods("POST")
 
