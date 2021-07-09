@@ -29,7 +29,43 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
-func homePage(w http.ResponseWriter, r *http.Request) {
+func home(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("token")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	tokenStr := cookie.Value
+
+	claims := &Claims{}
+
+	tkn, err := jwt.ParseWithClaims(tokenStr, claims, func(t *jwt.Token) (interface{}, error) {
+		return jwtKey, nil
+	})
+
+	if err != nil {
+		if err == jwt.ErrSignatureInvalid {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	if !tkn.Valid {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	w.Write([]byte(fmt.Sprintf("Hello, %s", claims.Username)))
+}
+
+func refresh(w http.ResponseWriter, r *http.Request) {
 
 }
 
@@ -69,8 +105,9 @@ func login(w http.ResponseWriter, r *http.Request) {
 func handleRequests() {
 
 	myRouter := mux.NewRouter().StrictSlash(true)
-	myRouter.HandleFunc("/", homePage)
+	myRouter.HandleFunc("/", home)
 	myRouter.HandleFunc("/api/login", login).Methods("POST")
+	myRouter.HandleFunc("/api/refresh", refresh).Methods("POST")
 
 	log.Fatal(http.ListenAndServe(":9001", myRouter))
 }
