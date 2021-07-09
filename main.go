@@ -11,61 +11,59 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var mySigningKey = []byte("super")
+var jwtKey = []byte("secret_key")
 
-func GenerateJWT() (string, error) {
-	token := jwt.New(jwt.SigningMethodHS256)
+var users = map[string]string{
+	"user1": "password1",
+	"user2": "password2",
+	"parth": "Parth@123",
+}
 
-	claims := token.Claims.(jwt.MapClaims)
+type Credentials struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
 
-	claims["authorized"] = true
-	claims["user"] = "Parth Aggarwal"
-	claims["exp"] = time.Now().Add(time.Minute * 30).Unix()
-
-	tokenString, err := token.SignedString(mySigningKey)
-
-	if err != nil {
-		fmt.Errorf("Something went wrong: %s", err.Error())
-		return "", err
-	}
-
-	return tokenString, nil
+type Claims struct {
+	Username string `json:"username"`
+	jwt.StandardClaims
 }
 
 func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("request from ", r.Header.Get("X-FORWARDED-FOR"), " on route /")
-	validToken := "Frazile Server Online"
 
-	// client := &http.Client{}
-	// req, _ := http.NewRequest("GET", "http://127.0.0.1:8081", nil)
-	// req.Header.Set("Authorized", validToken)
-	// res, err := client.Do(req)
-	// if err != nil {
-	// 	fmt.Fprintf(w, "Error: %s", err.Error())
-	// }
-
-	// body, err := ioutil.ReadAll(res.Body)
-	// if err != nil {
-	// 	fmt.Fprintf(w, err.Error())
-	// }
-
-	// fmt.Fprintf(w, string(body))
-
-	fmt.Fprintf(w, validToken)
 }
 
 func login(w http.ResponseWriter, r *http.Request) {
-	// fmt.Fprintf(w, "Login POST Endpoint worked")
-
-	validToken, err := GenerateJWT()
+	var credentials Credentials
+	err := json.NewDecoder(r.Body).Decode(&credentials)
 	if err != nil {
-		fmt.Fprintf(w, err.Error())
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	loggedin := validToken
-	fmt.Println("Endpoint Hit: Login Endpoint")
-	w.Header().Set("Content-Type", "application/json") // Setting the Content Type Header
-	w.WriteHeader(http.StatusOK)                       // Setting the Status Code
-	json.NewEncoder(w).Encode(loggedin)
+
+	expectedPasword, ok := users[credentials.Username]
+
+	if !ok || expectedPasword != credentials.Password {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	expirationTime := time.Now().Add(time.Minute * 5)
+
+	claims := &Claims{Username: credentials.Username, StandardClaims: jwt.StandardClaims{
+		ExpiresAt: expirationTime.Unix(),
+	}}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(jwtKey)
+
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{Name: "token", Value: tokenString, Expires: expirationTime})
+
 }
 
 func handleRequests() {
