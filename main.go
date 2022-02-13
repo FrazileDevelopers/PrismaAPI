@@ -109,7 +109,7 @@ func handleRequests() {
 	myRouter.HandleFunc("/api/login", login).Methods("POST")
 	myRouter.HandleFunc("/api/refresh", refresh).Methods("POST")
 
-	log.Fatal(http.ListenAndServe(":9001", myRouter))
+	log.Fatal(http.ListenAndServe(":8080", myRouter))
 }
 
 func main() {
